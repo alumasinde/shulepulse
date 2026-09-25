@@ -1,0 +1,27 @@
+{% extends "base.html" %}{% block title %}Dashboard — {{ school.name }}{% endblock %}
+{% block body %}
+<div x-data="{sidebar:true, academic:false, people:false}" class="min-h-screen">
+<header class="sticky top-0 z-20 border-b border-slate-200 bg-white"><div class="flex h-16 items-center justify-between px-4 sm:px-6">
+<div class="flex items-center gap-3"><button @click="sidebar=!sidebar" class="rounded-lg p-2 hover:bg-slate-100"><i class="fa-solid fa-bars"></i></button><span class="font-bold">{{ school.name }}</span></div>
+<div class="flex items-center gap-4"><span class="hidden text-sm text-slate-600 sm:block">{{ user.first_name }} {{ user.last_name }}</span><form method="post" action="/logout"><button class="text-sm font-semibold text-slate-600 hover:text-slate-950">Logout</button></form></div>
+</div></header>
+<div class="flex">
+<aside x-show="sidebar" class="hidden min-h-[calc(100vh-4rem)] w-64 border-r border-slate-200 bg-white p-4 md:block"><nav class="space-y-1 text-sm">
+<a class="nav-link nav-active" href="/dashboard"><i class="fa-solid fa-gauge mr-2"></i>Dashboard</a>
+<div class="pt-4 pb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">People</div>
+<a class="nav-link" href="/students"><i class="fa-solid fa-user-graduate mr-2"></i>Students</a><a class="nav-link" href="/parents"><i class="fa-solid fa-people-roof mr-2"></i>Parents</a><a class="nav-link" href="/teachers"><i class="fa-solid fa-chalkboard-user mr-2"></i>Teachers</a>
+<div class="pt-4 pb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">Academics</div>
+<a class="nav-link" href="/academics"><i class="fa-solid fa-school mr-2"></i>Academic Setup</a>
+<a class="nav-link" href="/academics#subjects"><i class="fa-solid fa-book mr-2"></i>Subjects</a>
+<div class="pt-4 pb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">Coming next</div>
+<span class="nav-link text-slate-400"><i class="fa-solid fa-file-pen mr-2"></i>Assessments</span><span class="nav-link text-slate-400"><i class="fa-solid fa-chart-column mr-2"></i>Reports</span>
+</nav></aside>
+<main class="min-w-0 flex-1 p-6 sm:p-8"><p class="text-sm font-medium text-emerald-700">School workspace</p><h1 class="mt-1 text-3xl font-bold tracking-tight">Good to see you, {{ user.first_name }}.</h1><p class="mt-2 text-slate-500">Manage your school's people and academic structure.</p>
+<div class="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+<div class="card"><p class="card-label">Students</p><p class="card-value">{{ counts.students }}</p><a href="/students" class="card-link">Manage <i class="fa-solid fa-arrow-right"></i></a></div>
+<div class="card"><p class="card-label">Parents</p><p class="card-value">{{ counts.parents }}</p><a href="/parents" class="card-link">Manage <i class="fa-solid fa-arrow-right"></i></a></div>
+<div class="card"><p class="card-label">Teachers</p><p class="card-value">{{ counts.teachers }}</p><a href="/teachers" class="card-link">Manage <i class="fa-solid fa-arrow-right"></i></a></div>
+<div class="card"><p class="card-label">Classes</p><p class="card-value">{{ counts.classes }}</p><a href="/academics" class="card-link">Setup <i class="fa-solid fa-arrow-right"></i></a></div>
+</div>
+<div class="mt-8 grid gap-5 lg:grid-cols-2"><div class="card"><h2 class="font-semibold">Academic setup</h2><p class="mt-2 text-sm text-slate-500">Create academic years, terms, classes, streams and subjects.</p><a href="/academics" class="mt-4 inline-flex rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white">Open setup</a></div><div class="card"><h2 class="font-semibold">Student management</h2><p class="mt-2 text-sm text-slate-500">Create complete student profiles and connect parents or guardians.</p><a href="/students" class="mt-4 inline-flex rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold">Open students</a></div></div>
+</main></div></div>{% endblock %}
