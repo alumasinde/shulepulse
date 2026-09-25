@@ -1,27 +1,147 @@
-{% extends "base.html" %}{% block title %}Dashboard — {{ school.name }}{% endblock %}
+{% extends "base.html" %}
+{% block title %}Dashboard — {{ school.name }}{% endblock %}
 {% block body %}
-<div x-data="{sidebar:true, academic:false, people:false}" class="min-h-screen">
-<header class="sticky top-0 z-20 border-b border-slate-200 bg-white"><div class="flex h-16 items-center justify-between px-4 sm:px-6">
-<div class="flex items-center gap-3"><button @click="sidebar=!sidebar" class="rounded-lg p-2 hover:bg-slate-100"><i class="fa-solid fa-bars"></i></button><span class="font-bold">{{ school.name }}</span></div>
-<div class="flex items-center gap-4"><span class="hidden text-sm text-slate-600 sm:block">{{ user.first_name }} {{ user.last_name }}</span><form method="post" action="/logout"><button class="text-sm font-semibold text-slate-600 hover:text-slate-950">Logout</button></form></div>
-</div></header>
-<div class="flex">
-<aside x-show="sidebar" class="hidden min-h-[calc(100vh-4rem)] w-64 border-r border-slate-200 bg-white p-4 md:block"><nav class="space-y-1 text-sm">
-<a class="nav-link nav-active" href="/dashboard"><i class="fa-solid fa-gauge mr-2"></i>Dashboard</a>
-<div class="pt-4 pb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">People</div>
-<a class="nav-link" href="/students"><i class="fa-solid fa-user-graduate mr-2"></i>Students</a><a class="nav-link" href="/parents"><i class="fa-solid fa-people-roof mr-2"></i>Parents</a><a class="nav-link" href="/teachers"><i class="fa-solid fa-chalkboard-user mr-2"></i>Teachers</a>
-<div class="pt-4 pb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">Academics</div>
-<a class="nav-link" href="/academics"><i class="fa-solid fa-school mr-2"></i>Academic Setup</a>
-<a class="nav-link" href="/academics#subjects"><i class="fa-solid fa-book mr-2"></i>Subjects</a>
-<div class="pt-4 pb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">Coming next</div>
-<span class="nav-link text-slate-400"><i class="fa-solid fa-file-pen mr-2"></i>Assessments</span><span class="nav-link text-slate-400"><i class="fa-solid fa-chart-column mr-2"></i>Reports</span>
-</nav></aside>
-<main class="min-w-0 flex-1 p-6 sm:p-8"><p class="text-sm font-medium text-emerald-700">School workspace</p><h1 class="mt-1 text-3xl font-bold tracking-tight">Good to see you, {{ user.first_name }}.</h1><p class="mt-2 text-slate-500">Manage your school's people and academic structure.</p>
-<div class="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-<div class="card"><p class="card-label">Students</p><p class="card-value">{{ counts.students }}</p><a href="/students" class="card-link">Manage <i class="fa-solid fa-arrow-right"></i></a></div>
-<div class="card"><p class="card-label">Parents</p><p class="card-value">{{ counts.parents }}</p><a href="/parents" class="card-link">Manage <i class="fa-solid fa-arrow-right"></i></a></div>
-<div class="card"><p class="card-label">Teachers</p><p class="card-value">{{ counts.teachers }}</p><a href="/teachers" class="card-link">Manage <i class="fa-solid fa-arrow-right"></i></a></div>
-<div class="card"><p class="card-label">Classes</p><p class="card-value">{{ counts.classes }}</p><a href="/academics" class="card-link">Setup <i class="fa-solid fa-arrow-right"></i></a></div>
+<div x-data="{sidebarOpen:false, people:true, academics:true, userMenu:false}" class="min-h-screen">
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="header-left">
+        <button @click="sidebarOpen=!sidebarOpen" class="icon-button" aria-label="Open navigation"><i class="fa-solid fa-bars"></i></button>
+        <div class="school-brand">
+          <div class="school-brand-name">{{ school.name }}</div>
+          <div class="school-brand-url">{{ school.slug }}.{{ request.url.hostname.split('.', 1)[-1] if '.' in request.url.hostname else request.url.hostname }}</div>
+        </div>
+      </div>
+      <div class="header-right" @click.outside="userMenu=false">
+        <button @click="userMenu=!userMenu" class="user-trigger" aria-label="Open user menu">
+          <span class="user-avatar">{{ user.first_name[:1] }}{{ user.last_name[:1] }}</span>
+          <span class="user-summary"><strong>{{ user.first_name }} {{ user.last_name }}</strong><small>{{ user.role.replace('_',' ')|capitalize }}</small></span>
+          <i class="fa-solid fa-chevron-down user-chevron"></i>
+        </button>
+        <div x-cloak x-show="userMenu" x-transition class="user-menu">
+          <div class="user-menu-head"><strong>{{ user.first_name }} {{ user.last_name }}</strong><span>{{ user.role.replace('_',' ')|capitalize }}</span></div>
+          <div class="user-menu-divider"></div>
+          <form method="post" action="/logout"><button class="user-menu-item danger" type="submit"><i class="fa-solid fa-right-from-bracket"></i><span>Logout</span></button></form>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="app-shell">
+    <div x-cloak x-show="sidebarOpen" x-transition.opacity @click="sidebarOpen=false" class="mobile-sidebar-backdrop"></div>
+    <aside class="sidebar" :class="sidebarOpen ? 'sidebar-mobile-open' : ''">
+      <div class="sidebar-scroll">
+        <nav class="sidebar-nav" aria-label="Main navigation">
+          <a class="nav-link nav-active" href="/dashboard"><i class="fa-solid fa-gauge-high"></i><span>Dashboard</span></a>
+
+          <div class="nav-section">
+            <button class="nav-section-toggle" @click="people=!people"><span>People</span><i class="fa-solid" :class="people ? 'fa-chevron-up' : 'fa-chevron-down'"></i></button>
+            <div x-show="people" x-transition class="nav-section-items">
+              <a class="nav-link" href="/students"><i class="fa-solid fa-user-graduate"></i><span>Students</span></a>
+              <a class="nav-link" href="/parents"><i class="fa-solid fa-people-group"></i><span>Parents &amp; guardians</span></a>
+              <a class="nav-link" href="/teachers"><i class="fa-solid fa-chalkboard-user"></i><span>Teachers</span></a>
+            </div>
+          </div>
+
+          <div class="nav-section">
+            <button class="nav-section-toggle" @click="academics=!academics"><span>Academics</span><i class="fa-solid" :class="academics ? 'fa-chevron-up' : 'fa-chevron-down'"></i></button>
+            <div x-show="academics" x-transition class="nav-section-items">
+              <a class="nav-link" href="/academics"><i class="fa-solid fa-school"></i><span>Academic setup</span></a>
+              <a class="nav-link" href="/academics#classes"><i class="fa-solid fa-layer-group"></i><span>Classes &amp; streams</span></a>
+              <a class="nav-link" href="/academics#subjects"><i class="fa-solid fa-book-open"></i><span>Subjects</span></a>
+            </div>
+          </div>
+
+          <div class="nav-section upcoming-nav">
+            <div class="nav-section-label">Coming next</div>
+            <div class="nav-section-items">
+              <div class="nav-link nav-disabled"><i class="fa-solid fa-pen-to-square"></i><span>Assessments</span><em>SOON</em></div>
+              <div class="nav-link nav-disabled"><i class="fa-solid fa-chart-column"></i><span>Reports</span><em>SOON</em></div>
+              <div class="nav-link nav-disabled"><i class="fa-solid fa-wallet"></i><span>Fees</span><em>SOON</em></div>
+              <div class="nav-link nav-disabled"><i class="fa-brands fa-whatsapp"></i><span>WhatsApp</span><em>SOON</em></div>
+            </div>
+          </div>
+        </nav>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <div class="content-container">
+        <div class="page-heading">
+          <div>
+            <p class="eyebrow">School workspace</p>
+            <h1>Good to see you, {{ user.first_name }}.</h1>
+            <p class="page-description">A quick view of {{ school.name }} and the work that needs attention.</p>
+          </div>
+          <a href="/students/new" class="btn-primary"><i class="fa-solid fa-plus"></i><span>Add student</span></a>
+        </div>
+
+        <section class="stats-grid" aria-label="School overview">
+          {% for key,label,icon,url in [('students','Students','fa-user-graduate','/students'),('parents','Parents','fa-people-group','/parents'),('teachers','Teachers','fa-chalkboard-user','/teachers'),('classes','Classes','fa-layer-group','/academics#classes'),('subjects','Subjects','fa-book-open','/academics#subjects')] %}
+          <a href="{{ url }}" class="stat-card">
+            <div class="stat-card-top"><span class="stat-icon"><i class="fa-solid {{ icon }}"></i></span><span class="stat-arrow"><i class="fa-solid fa-arrow-up-right-from-square"></i></span></div>
+            <div class="stat-label">{{ label }}</div>
+            <div class="stat-value">{{ counts[key] }}</div>
+            <div class="stat-footer"><span>View {{ label|lower }}</span><i class="fa-solid fa-arrow-right"></i></div>
+          </a>
+          {% endfor %}
+        </section>
+
+        <div class="dashboard-grid">
+          <section class="card setup-card">
+            <div class="section-header">
+              <div><h2>Academic setup</h2><p>Complete these steps before entering assessments.</p></div>
+              <span class="progress-badge">{{ setup_completed }}/{{ setup_total }} complete</span>
+            </div>
+            <div class="setup-grid">
+              <a class="setup-item {{ 'setup-complete' if setup.academic_year else '' }}" href="/academics">
+                <span class="setup-status"><i class="fa-solid {{ 'fa-circle-check' if setup.academic_year else 'fa-circle-exclamation' }}"></i></span>
+                <span class="setup-copy"><strong>Academic year</strong><small>{{ 'Active year configured' if setup.academic_year else 'Create and activate an academic year' }}</small></span><i class="fa-solid fa-chevron-right setup-chevron"></i>
+              </a>
+              <a class="setup-item {{ 'setup-complete' if setup.term else '' }}" href="/academics">
+                <span class="setup-status"><i class="fa-solid {{ 'fa-circle-check' if setup.term else 'fa-circle-exclamation' }}"></i></span>
+                <span class="setup-copy"><strong>Active term</strong><small>{{ active_term.name if active_term else 'Create and activate the current term' }}</small></span><i class="fa-solid fa-chevron-right setup-chevron"></i>
+              </a>
+              <a class="setup-item {{ 'setup-complete' if setup.classes else '' }}" href="/academics#classes">
+                <span class="setup-status"><i class="fa-solid {{ 'fa-circle-check' if setup.classes else 'fa-circle-exclamation' }}"></i></span>
+                <span class="setup-copy"><strong>Classes</strong><small>{{ 'Classes are ready' if setup.classes else 'Add your first class' }}</small></span><i class="fa-solid fa-chevron-right setup-chevron"></i>
+              </a>
+              <a class="setup-item {{ 'setup-complete' if setup.subjects else '' }}" href="/academics#subjects">
+                <span class="setup-status"><i class="fa-solid {{ 'fa-circle-check' if setup.subjects else 'fa-circle-exclamation' }}"></i></span>
+                <span class="setup-copy"><strong>Subjects</strong><small>{{ 'Subjects are ready' if setup.subjects else 'Add the subjects your school teaches' }}</small></span><i class="fa-solid fa-chevron-right setup-chevron"></i>
+              </a>
+            </div>
+          </section>
+
+          <section class="card period-card">
+            <div class="section-header"><div><h2>Current academic period</h2><p>The active year and term for school operations.</p></div></div>
+            {% if active_year %}
+            <div class="period-panel">
+              <span class="period-icon"><i class="fa-regular fa-calendar"></i></span>
+              <span class="period-label">Academic year</span><strong>{{ active_year.name }}</strong><small>{{ active_year.starts_on }} — {{ active_year.ends_on }}</small>
+              {% if active_term %}<div class="period-divider"></div><span class="period-label">Active term</span><strong>{{ active_term.name }}</strong><small>{{ active_term.starts_on }} — {{ active_term.ends_on }}</small>{% endif %}
+            </div>
+            {% else %}
+            <div class="empty-period"><span class="empty-period-icon"><i class="fa-regular fa-calendar"></i></span><strong>No active academic year</strong><p>Set one up before working on assessments.</p><a href="/academics" class="text-link">Open academic setup <i class="fa-solid fa-arrow-right"></i></a></div>
+            {% endif %}
+          </section>
+        </div>
+
+        <section class="card coming-card">
+          <div class="section-header"><div><p class="eyebrow">Product roadmap</p><h2>Coming next</h2><p>These modules will extend the school workspace as we build out ShulePulse.</p></div></div>
+          <div class="coming-grid">
+            <div class="coming-item"><span class="coming-icon"><i class="fa-solid fa-pen-to-square"></i></span><div><strong>Assessments</strong><small>Record marks and manage assessment periods.</small></div><span class="coming-badge">Coming soon</span></div>
+            <div class="coming-item"><span class="coming-icon"><i class="fa-solid fa-chart-column"></i></span><div><strong>Reports</strong><small>Generate academic and student reports.</small></div><span class="coming-badge">Coming soon</span></div>
+            <div class="coming-item"><span class="coming-icon"><i class="fa-solid fa-wallet"></i></span><div><strong>Fees</strong><small>Track balances, invoices and payments.</small></div><span class="coming-badge">Coming soon</span></div>
+            <div class="coming-item"><span class="coming-icon"><i class="fa-brands fa-whatsapp"></i></span><div><strong>WhatsApp</strong><small>Connect parents with school updates.</small></div><span class="coming-badge">Coming soon</span></div>
+          </div>
+        </section>
+
+        <section class="card recent-card">
+          <div class="section-header"><div><h2>Recently added students</h2><p>The latest student records in this school.</p></div><a href="/students" class="text-link">View all <i class="fa-solid fa-arrow-right"></i></a></div>
+          <div class="recent-list">{% for s in recent_students %}<a href="/students/{{ s.id }}" class="student-row"><span class="avatar">{{ s.first_name[:1] }}{{ s.last_name[:1] }}</span><span class="student-copy"><strong>{{ s.first_name }} {{ s.last_name }}</strong><small>{{ s.admission_number }} · {{ s.student_status|capitalize }}</small></span><i class="fa-solid fa-chevron-right"></i></a>{% else %}<div class="empty-list"><span class="empty-list-icon"><i class="fa-solid fa-user-graduate"></i></span><strong>No students have been added yet</strong><p>Start building your student records by adding the first student.</p><a class="text-link" href="/students/new">Add the first student <i class="fa-solid fa-arrow-right"></i></a></div>{% endfor %}</div>
+        </section>
+      </div>
+    </main>
+  </div>
 </div>
-<div class="mt-8 grid gap-5 lg:grid-cols-2"><div class="card"><h2 class="font-semibold">Academic setup</h2><p class="mt-2 text-sm text-slate-500">Create academic years, terms, classes, streams and subjects.</p><a href="/academics" class="mt-4 inline-flex rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white">Open setup</a></div><div class="card"><h2 class="font-semibold">Student management</h2><p class="mt-2 text-sm text-slate-500">Create complete student profiles and connect parents or guardians.</p><a href="/students" class="mt-4 inline-flex rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold">Open students</a></div></div>
-</main></div></div>{% endblock %}
+{% endblock %}

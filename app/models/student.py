@@ -1,13 +1,14 @@
 from datetime import date, datetime
-from sqlalchemy import BigInteger, Boolean, Date, DateTime, ForeignKey, JSON, String, UniqueConstraint
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, JSON, String, UniqueConstraint
+from sqlalchemy.dialects.mysql import BIGINT
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 
 class Student(Base):
     __tablename__ = 'students'
     __table_args__ = (UniqueConstraint('school_id','admission_number',name='uq_student_school_admission'),)
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    school_id: Mapped[int] = mapped_column(BigInteger, ForeignKey('schools.id', ondelete='CASCADE'), nullable=False, index=True)
+    id: Mapped[int] = mapped_column(BIGINT(unsigned=True), primary_key=True, autoincrement=True)
+    school_id: Mapped[int] = mapped_column(BIGINT(unsigned=True), ForeignKey('schools.id', ondelete='CASCADE'), nullable=False, index=True)
     admission_number: Mapped[str] = mapped_column(String(100), nullable=False)
     first_name: Mapped[str] = mapped_column(String(100), nullable=False)
     last_name: Mapped[str] = mapped_column(String(100), nullable=False)
@@ -16,8 +17,8 @@ class Student(Base):
     gender: Mapped[str | None] = mapped_column(String(50))
     nationality: Mapped[str | None] = mapped_column(String(100), default='Kenyan')
     photo_url: Mapped[str | None] = mapped_column(String(500))
-    class_id: Mapped[int | None] = mapped_column(BigInteger, ForeignKey('classes.id', ondelete='SET NULL'), index=True)
-    stream_id: Mapped[int | None] = mapped_column(BigInteger, ForeignKey('streams.id', ondelete='SET NULL'), index=True)
+    class_id: Mapped[int | None] = mapped_column(BIGINT(unsigned=True), ForeignKey('classes.id', ondelete='SET NULL'), index=True)
+    stream_id: Mapped[int | None] = mapped_column(BIGINT(unsigned=True), ForeignKey('streams.id', ondelete='SET NULL'), index=True)
     admission_date: Mapped[date | None] = mapped_column(Date)
     previous_school: Mapped[str | None] = mapped_column(String(255))
     student_status: Mapped[str] = mapped_column(String(50), nullable=False, default='active')
@@ -35,8 +36,8 @@ class Student(Base):
 class Parent(Base):
     __tablename__ = 'parents'
     __table_args__ = (UniqueConstraint('school_id','phone',name='uq_parent_school_phone'),)
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    school_id: Mapped[int] = mapped_column(BigInteger, ForeignKey('schools.id', ondelete='CASCADE'), nullable=False, index=True)
+    id: Mapped[int] = mapped_column(BIGINT(unsigned=True), primary_key=True, autoincrement=True)
+    school_id: Mapped[int] = mapped_column(BIGINT(unsigned=True), ForeignKey('schools.id', ondelete='CASCADE'), nullable=False, index=True)
     first_name: Mapped[str] = mapped_column(String(100), nullable=False)
     last_name: Mapped[str] = mapped_column(String(100), nullable=False)
     phone: Mapped[str] = mapped_column(String(30), nullable=False)
@@ -51,10 +52,10 @@ class Parent(Base):
 class StudentParent(Base):
     __tablename__ = 'student_parents'
     __table_args__ = (UniqueConstraint('student_id','parent_id',name='uq_student_parent'),)
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    school_id: Mapped[int] = mapped_column(BigInteger, ForeignKey('schools.id', ondelete='CASCADE'), nullable=False, index=True)
-    student_id: Mapped[int] = mapped_column(BigInteger, ForeignKey('students.id', ondelete='CASCADE'), nullable=False, index=True)
-    parent_id: Mapped[int] = mapped_column(BigInteger, ForeignKey('parents.id', ondelete='CASCADE'), nullable=False, index=True)
+    id: Mapped[int] = mapped_column(BIGINT(unsigned=True), primary_key=True, autoincrement=True)
+    school_id: Mapped[int] = mapped_column(BIGINT(unsigned=True), ForeignKey('schools.id', ondelete='CASCADE'), nullable=False, index=True)
+    student_id: Mapped[int] = mapped_column(BIGINT(unsigned=True), ForeignKey('students.id', ondelete='CASCADE'), nullable=False, index=True)
+    parent_id: Mapped[int] = mapped_column(BIGINT(unsigned=True), ForeignKey('parents.id', ondelete='CASCADE'), nullable=False, index=True)
     relationship_type: Mapped[str] = mapped_column(String(100), nullable=False, default='parent')
     is_primary: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     student = relationship('Student', back_populates='parents')

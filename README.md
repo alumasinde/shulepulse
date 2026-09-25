@@ -1,33 +1,87 @@
 # ShulePulse
 
-Production-oriented Phase 1–2 school SaaS foundation built for **local development with MySQL installed directly on the machine**. Docker is not required.
+Production-oriented school SaaS foundation built for **local development with MySQL installed directly on the machine**. Docker is not required.
 
 ## Stack
 
-FastAPI · Python · MySQL · SQLAlchemy 2 · Alembic · Pydantic · Jinja2 · HTMX · Alpine.js · Tailwind CSS · Font Awesome
+FastAPI · Python 3.14 · MySQL · SQLAlchemy 2 · Alembic · Pydantic · Jinja2 · HTMX · Alpine.js · Tailwind CSS · Font Awesome
 
-## Included in this phase
+## Current phase
 
-- School registration and tenant handles
-- Local subdomain tenancy
-- Admin authentication
-- School-scoped authorization
-- Academic years and terms
-- Classes and streams
+This build finishes the **foundation, dashboard and core people/academic workflows** without changing the existing database migrations.
+
+### Foundation hardening
+
+- School registration with validated, reserved-handle protection
+- School tenant resolved from the request hostname
+- Authentication tied to both `user_id` and `school_id`
+- Active-user verification on every protected request
+- No browser-supplied `school_id` is trusted for tenant access
+- Tenant-scoped queries throughout the management workflows
+- Cross-school class/stream validation when assigning students
+- Cross-school parent validation when linking students
+- MySQL ORM IDs explicitly use unsigned `BIGINT`, matching the migrations
+- No SQL ENUMs
+- Person names use `first_name` and `last_name`
+
+### Dashboard
+
+- Responsive sidebar
+- Collapsible People and Academics navigation groups
+- Font Awesome icons
+- Student, parent, teacher, class and subject counts
+- Academic setup progress
+- Active academic year and term summary
+- Recently added students
+- Quick action to add students
+- Coming-next modules shown as disabled rather than pretending they are implemented
+
+### Student workflow
+
+- Search by name or admission number
+- Comprehensive student profile
+- Add student
+- Edit student
+- Student status
+- Class and stream placement validation
+- Parent/guardian linking
+- Primary parent handling
+- Address and location fields
+- Birth certificate number
+- Medical notes and allergies
+- Flexible `extra_data` JSON for future school-specific fields
+
+### Parent workflow
+
+- Create parent/guardian
+- Search by name or phone
+- School-scoped records
+- Duplicate phone protection
+- Linked-student count
+
+### Teacher workflow
+
+- Create teacher
+- Search by name or employee number
+- Employee number uniqueness per school
+- Contact details, hire date and specialization
+
+### Academic workflow
+
+- Academic years
+- Activate one academic year per school
+- Terms
+- Activate one term within an academic year
+- Classes
+- Streams tied to classes
 - Subjects
-- Teachers
-- Students with a comprehensive profile
-- Parents/guardians
-- Student ↔ parent linking
-- Dashboard counts
-- Responsive management screens
-- MySQL migration for all Phase 2 tables
+- Duplicate protection
+- Date validation
+- Tenant validation on every operation
 
 ## Local setup — Windows/MySQL
 
 ### 1. Create the database
-
-In MySQL Workbench or the MySQL CLI:
 
 ```sql
 CREATE DATABASE shulepulse CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -41,27 +95,34 @@ Copy `.env.example` to `.env` and use your local MySQL credentials:
 DATABASE_URL=mysql+pymysql://root:YOUR_MYSQL_PASSWORD@127.0.0.1:3306/shulepulse
 ```
 
-Generate a long random `SECRET_KEY`.
+Use a random secret of at least 32 characters for `SECRET_KEY`.
 
 ### 3. Python environment
 
 ```powershell
 python -m venv .venv
 .venv\Scripts\Activate.ps1
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 ```
+
+Python 3.14 is supported by the dependency versions in this project.
 
 ### 4. Run migrations
 
 ```powershell
 alembic upgrade head
+alembic current
 ```
 
-This applies both the foundation migration and the Phase 2 academic/people migration.
+The expected head is:
 
-### 5. Build the frontend assets
+```text
+0002_academics_people
+```
 
-Install Node.js, then:
+### 5. Build frontend assets
+
+Node.js is only needed to compile Tailwind CSS:
 
 ```powershell
 npm install
@@ -80,72 +141,56 @@ Open:
 http://localhost:8000/register
 ```
 
-Register a school such as `majimazuri`. Then use:
+Register a school such as `majimazuri`.
+
+Then open:
 
 ```text
 http://majimazuri.shulepulse.localhost:8000/login
 ```
 
-Modern browsers normally resolve `*.localhost` to your machine. If yours does not, add an entry to the Windows hosts file:
+Modern browsers normally resolve `*.localhost` to the local machine. If yours does not, add this to the Windows hosts file:
 
 ```text
 127.0.0.1 majimazuri.shulepulse.localhost
 ```
 
-## Phase 2 modules
+## Important tenant rule
 
-### Academic setup
+The application does not accept a school ID from forms or URLs for authorization.
 
-`/academics` manages:
+The tenant is resolved from:
 
-- Academic years
-- Terms
-- Classes
-- Streams
-- Subjects
+```text
+majimazuri.shulepulse.localhost:8000
+        ↓
+majimazuri
+        ↓
+schools.slug
+        ↓
+school.id
+        ↓
+authenticated user's school_id
+```
 
-### Students
-
-`/students` supports:
-
-- Admission number
-- First/last/other names
-- Date of birth
-- Gender
-- Nationality
-- Photo URL field
-- Class/stream
-- Admission date
-- Previous school
-- Address/city/county
-- Birth certificate number
-- Medical notes
-- Allergies
-- Flexible `extra_data` JSON for future school-specific fields
-- Student status
-
-### Parents
-
-`/parents` supports parent/guardian records and `/students/{id}` supports linking parents to students.
-
-### Teachers
-
-`/teachers` supports teacher profiles, employee numbers, contact details, hire date and specialization.
+Every tenant-owned query should continue following this rule as new modules are added.
 
 ## Architecture rules
 
-- **No SQL ENUMs.** Statuses and roles are strings so the system remains extensible.
+- **No SQL ENUMs.** Roles and statuses remain application-level strings.
 - Person names always use `first_name` and `last_name`.
-- Tenant-owned tables contain `school_id`.
-- Tenant authorization comes from the hostname + authenticated session, not a browser-supplied school ID.
+- Tenant-owned tables contain `school_id` where appropriate.
 - JSON is reserved for configuration and genuinely flexible data; core relationships remain relational.
+- Do not add a migration merely to introduce a new UI screen. Add schema only when a real persistent capability requires it.
 
-## Production transition later
+## Next phase
 
-When local development is complete, the same application can move behind a reverse proxy with:
+The foundation is now ready for:
 
-```text
-*.shulepulse.com → FastAPI
-```
-
-and production MySQL. Secure cookies, HTTPS, secret management, backups, monitoring and a real object-storage provider should be configured before launch.
+1. Assessment configuration
+2. Flexible grading rubrics in school settings
+3. Formative and summative assessment entry
+4. Results and report cards
+5. Fees and balances
+6. WhatsApp automation
+7. School subscriptions
