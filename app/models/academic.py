@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, String, UniqueConstraint
 from sqlalchemy.dialects.mysql import BIGINT
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
@@ -93,3 +93,18 @@ class TeacherAssignment(Base):
     subject_id: Mapped[int] = mapped_column(BIGINT(unsigned=True), ForeignKey('subjects.id', ondelete='CASCADE'), nullable=False, index=True)
     academic_year_id: Mapped[int] = mapped_column(BIGINT(unsigned=True), ForeignKey('academic_years.id', ondelete='CASCADE'), nullable=False, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
+
+class ClassSubject(Base):
+    __tablename__ = 'class_subjects'
+    __table_args__ = (UniqueConstraint('school_id', 'class_id', 'subject_id', 'academic_year_id', name='uq_class_subject_year'),)
+    id: Mapped[int] = mapped_column(BIGINT(unsigned=True), primary_key=True, autoincrement=True)
+    school_id: Mapped[int] = mapped_column(BIGINT(unsigned=True), ForeignKey('schools.id', ondelete='CASCADE'), nullable=False, index=True)
+    class_id: Mapped[int] = mapped_column(BIGINT(unsigned=True), ForeignKey('classes.id', ondelete='CASCADE'), nullable=False, index=True)
+    subject_id: Mapped[int] = mapped_column(BIGINT(unsigned=True), ForeignKey('subjects.id', ondelete='CASCADE'), nullable=False, index=True)
+    academic_year_id: Mapped[int] = mapped_column(BIGINT(unsigned=True), ForeignKey('academic_years.id', ondelete='CASCADE'), nullable=False, index=True)
+    is_required: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    class_room = relationship('ClassRoom')
+    subject = relationship('Subject')
+    academic_year = relationship('AcademicYear')

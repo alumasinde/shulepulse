@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 {% block title %}Dashboard — {{ school.name }}{% endblock %}
 {% block body %}
-<div x-data="{sidebarOpen:false, people:true, academics:true, userMenu:false}" class="min-h-screen">
+<div x-data="{sidebarOpen:false, sidebarCollapsed:false, people:true, academics:true, userMenu:false}" class="min-h-screen">
   <header class="app-header">
     <div class="header-inner">
       <div class="header-left">
-        <button @click="sidebarOpen=!sidebarOpen" class="icon-button" aria-label="Open navigation"><i class="fa-solid fa-bars"></i></button>
+        <button @click="if (window.innerWidth <= 900) { sidebarOpen = true } else { sidebarCollapsed = !sidebarCollapsed }" class="icon-button" aria-label="Toggle navigation"><i class="fa-solid fa-bars"></i></button>
         <div class="school-brand">
           <div class="school-brand-name">{{ school.name }}</div>
           <div class="school-brand-url">{{ school.slug }}.{{ request.url.hostname.split('.', 1)[-1] if '.' in request.url.hostname else request.url.hostname }}</div>
@@ -26,7 +26,7 @@
     </div>
   </header>
 
-  <div class="app-shell">
+  <div class="app-shell" :class="{'sidebar-collapsed': sidebarCollapsed}">
     <div x-cloak x-show="sidebarOpen" x-transition.opacity @click="sidebarOpen=false" class="mobile-sidebar-backdrop"></div>
     <aside class="sidebar" :class="sidebarOpen ? 'sidebar-mobile-open' : ''">
       <div class="sidebar-scroll">
@@ -108,6 +108,10 @@
               <a class="setup-item {{ 'setup-complete' if setup.subjects else '' }}" href="/academics#subjects">
                 <span class="setup-status"><i class="fa-solid {{ 'fa-circle-check' if setup.subjects else 'fa-circle-exclamation' }}"></i></span>
                 <span class="setup-copy"><strong>Subjects</strong><small>{{ 'Subjects are ready' if setup.subjects else 'Add the subjects your school teaches' }}</small></span><i class="fa-solid fa-chevron-right setup-chevron"></i>
+              </a>
+              <a class="setup-item {{ 'setup-complete' if setup.curriculum else '' }}" href="/academics#curriculum">
+                <span class="setup-status"><i class="fa-solid {{ 'fa-circle-check' if setup.curriculum else 'fa-circle-exclamation' }}"></i></span>
+                <span class="setup-copy"><strong>Class curriculum</strong><small>{{ 'Every class has subjects assigned' if setup.curriculum else 'Assign subjects to every class' }}</small></span><i class="fa-solid fa-chevron-right setup-chevron"></i>
               </a>
             </div>
           </section>

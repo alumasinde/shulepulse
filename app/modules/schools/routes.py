@@ -5,7 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.dependencies import get_db, require_school, require_user
-from app.models.academic import AcademicYear, ClassRoom, Teacher, Term, Subject
+from app.models.academic import AcademicYear, ClassRoom, Teacher, Term, Subject, ClassSubject
 from app.models.student import Parent, Student
 from app.modules.schools.schemas import SchoolRegisterRequest
 from app.modules.schools.service import register_school
@@ -55,17 +55,23 @@ def dashboard(
         "teachers": db.scalar(select(func.count(Teacher.id)).where(Teacher.school_id == school.id)) or 0,
         "classes": db.scalar(select(func.count(ClassRoom.id)).where(ClassRoom.school_id == school.id)) or 0,
         "subjects": db.scalar(select(func.count(Subject.id)).where(Subject.school_id == school.id)) or 0,
+        "curriculum": 0,
+        "assigned_classes": 0,
     }
     active_year = db.scalar(select(AcademicYear).where(AcademicYear.school_id == school.id, AcademicYear.is_active.is_(True)).order_by(AcademicYear.starts_on.desc()))
     active_term = None
     if active_year:
         active_term = db.scalar(select(Term).where(Term.school_id == school.id, Term.academic_year_id == active_year.id, Term.is_active.is_(True)))
     recent_students = db.scalars(select(Student).where(Student.school_id == school.id).order_by(Student.created_at.desc()).limit(6)).all()
+    if active_year:
+        counts["curriculum"] = db.scalar(select(func.count(ClassSubject.id)).where(ClassSubject.school_id == school.id, ClassSubject.academic_year_id == active_year.id)) or 0
+        counts["assigned_classes"] = db.scalar(select(func.count(func.distinct(ClassSubject.class_id))).where(ClassSubject.school_id == school.id, ClassSubject.academic_year_id == active_year.id)) or 0
     setup = {
         "academic_year": bool(active_year),
         "term": bool(active_term),
         "classes": counts["classes"] > 0,
         "subjects": counts["subjects"] > 0,
+        "curriculum": bool(active_year and counts["classes"] > 0 and counts["assigned_classes"] >= counts["classes"]),
     }
     completed = sum(setup.values())
     return page(request, "dashboard/index.html", school=school, user=user, counts=counts,
